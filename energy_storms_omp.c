@@ -213,6 +213,7 @@ int main(int argc, char *argv[]) {
 
         /* 4.2.2. Update layer using the ancillary values.
                   Skip updating the first and last positions */
+        #pragma omp parallel for shared(layer, layer_copy) private(k) default(none)
         for( k=1; k<layer_size-1; k++ )
             layer[k] = ( layer_copy[k-1] + layer_copy[k] + layer_copy[k+1] ) / 3;
 

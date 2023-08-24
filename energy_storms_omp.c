@@ -204,8 +204,7 @@ int main(int argc, char *argv[]) {
             /* For each cell in the layer */
             for( k=0; k<layer_size; k++ ) {
                 /* Update the energy value for the cell */
-                float energy_k = get_energy( layer, layer_size, k, position, energy );
-                layer[k] = layer[k] + energy_k;
+                layer[k] = layer[k] + get_energy( layer, layer_size, k, position, energy );
             }
         }
 
@@ -222,7 +221,6 @@ int main(int argc, char *argv[]) {
             layer[k] = ( layer_copy[k-1] + layer_copy[k] + layer_copy[k+1] ) / 3;
 
         /* 4.3. Locate the maximum value in the layer, and its position */
-        #pragma omp target parallel for map(to: layer_copy[:layer_size]) reduction(max: maximum[i]) reduction(max: positions[i])
         for( k=1; k<layer_size-1; k++ ) {
             /* Check it only if it is a local maximum */
             if ( layer[k] > layer[k-1] && layer[k] > layer[k+1] ) {

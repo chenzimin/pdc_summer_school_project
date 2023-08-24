@@ -50,7 +50,7 @@ typedef struct {
 
 /* THIS FUNCTION CAN BE MODIFIED */
 /* Function to update a single position of the layer */
-void update( float *layer, int layer_size, int k, int pos, float energy ) {
+float get_energy( float *layer, int layer_size, int k, int pos, float energy ) {
     /* 1. Compute the absolute value of the distance between the
         impact position and the k-th position of the layer */
     int distance = pos - k;
@@ -69,7 +69,8 @@ void update( float *layer, int layer_size, int k, int pos, float energy ) {
 
     /* 5. Do not add if its absolute value is lower than the threshold */
     if ( energy_k >= THRESHOLD / layer_size || energy_k <= -THRESHOLD / layer_size )
-        layer[k] = layer[k] + energy_k;
+        return energy_k;
+    return 0;
 }
 
 
@@ -193,7 +194,7 @@ int main(int argc, char *argv[]) {
 
         /* 4.1. Add impacts energies to layer cells */
         /* For each particle */
-        #pragma omp target parallel for map(tofrom: layer[:layer_size])
+        #pragma omp target parallel for map(tofrom: layer[:layer_size]) reduction(+:layer[:layer_size])
         for( j=0; j<storms[i].size; j++ ) {
             /* Get impact energy (expressed in thousandths) */
             float energy = (float)storms[i].posval[j*2+1] * 1000;
@@ -203,7 +204,8 @@ int main(int argc, char *argv[]) {
             /* For each cell in the layer */
             for( k=0; k<layer_size; k++ ) {
                 /* Update the energy value for the cell */
-                update( layer, layer_size, k, position, energy );
+                float energy_k = get_energy( layer, layer_size, k, position, energy );
+                layer[k] = layer[k] + energy_k;
             }
         }
 

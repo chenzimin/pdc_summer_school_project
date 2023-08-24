@@ -50,7 +50,7 @@ typedef struct {
 
 /* THIS FUNCTION CAN BE MODIFIED */
 /* Function to update a single position of the layer */
-float get_energy( float *layer, int layer_size, int k, int pos, float energy ) {
+void update( float *layer, int layer_size, int k, int pos, float energy ) {
     /* 1. Compute the absolute value of the distance between the
         impact position and the k-th position of the layer */
     int distance = pos - k;
@@ -69,8 +69,7 @@ float get_energy( float *layer, int layer_size, int k, int pos, float energy ) {
 
     /* 5. Do not add if its absolute value is lower than the threshold */
     if ( energy_k >= THRESHOLD / layer_size || energy_k <= -THRESHOLD / layer_size )
-        return energy_k;
-    return 0;
+        layer[k] = layer[k] + energy_k;
 }
 
 
@@ -204,8 +203,7 @@ int main(int argc, char *argv[]) {
             /* For each cell in the layer */
             for( k=0; k<layer_size; k++ ) {
                 /* Update the energy value for the cell */
-                float energy_k = get_energy( layer, layer_size, k, position, energy );
-                layer[k] = layer[k] + energy_k;
+                update( layer, layer_size, k, position, energy );
             }
         }
 

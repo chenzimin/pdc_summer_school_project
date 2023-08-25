@@ -145,6 +145,10 @@ Storm read_storm_file( char *fname ) {
     return storm;
 }
 
+int min(int a, int b) {
+    return a < b ? a : b;
+}
+
 /*
  * MAIN PROGRAM
  */

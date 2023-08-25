@@ -125,7 +125,7 @@ __global__ void updateKernel( int *deviceStorm, int storm_size, float *deviceLay
             deviceLayerCopy[layer_indices[i]] = energy_updates[i] + deviceLayerCopy[layer_indices[i]];
         }
         for( i=0 ; i<layer_size ; i++) {
-            atomicAdd(deviceLayer[i], deviceLayerCopy[i]);
+            atomicAdd(&deviceLayer[i], deviceLayerCopy[i]);
         }
     }
 }

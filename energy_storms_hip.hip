@@ -91,7 +91,8 @@ __global__ void updateKernel( int *deviceStorm, int storm_size, float *deviceLay
     float energy = (float)deviceStorm[particle_index*2+1] * 1000;
     int position = deviceStorm[particle_index*2];
 
-    __shared__ float layer_updates[2*TPB];
+    __shared__ float energy_updates[TPB];
+    __shared__ int layer_indices[TPB]
 
     /* 1. Compute the absolute value of the distance between the
         impact position and the k-th position of the layer */
@@ -109,19 +110,23 @@ __global__ void updateKernel( int *deviceStorm, int storm_size, float *deviceLay
     /* 4. Compute attenuated energy */
     float energy_k = energy / layer_size / atenuacion;
 
-    layer_updates[2*local_id] = (float)layer_index;
+    layer_indices[local_id] = layer_index;
     /* 5. Do not add if its absolute value is lower than the threshold */
     if ( energy_k >= THRESHOLD / layer_size || energy_k <= -THRESHOLD / layer_size ) {
-        layer_updates[2*local_id+1] = energy_k;
+        energy_updates[local_id] = energy_k;
     } else {
-        layer_updates[2*local_id+1] = 0.0f;
+        energy_updates[local_id] = 0.0f;
     }
     __syncthreads();
+
+    for( i=0 ; i<TPB ; i++) {
+        printf("%f\n", energy_updates[i] );
+    }
 
     if (local_id == 0) {
         int i;
         for( i=0 ; i<TPB ; i++) {
-            atomicAdd(&deviceLayer[(int)layer_updates[2*i]], layer_updates[2*i+1]);
+            atomicAdd(&deviceLayer[layer_indices[i]], energy_updates[i]);
         }
     }
 }

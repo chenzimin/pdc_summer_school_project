@@ -50,7 +50,7 @@ typedef struct {
 
 /* THIS FUNCTION CAN BE MODIFIED */
 /* Function to update a single position of the layer */
-float get_energy( float *layer, int layer_size, int k, int pos, float energy ) {
+float get_energy( int layer_size, int k, int pos, float energy ) {
     /* 1. Compute the absolute value of the distance between the
         impact position and the k-th position of the layer */
     int distance = pos - k;
@@ -70,7 +70,7 @@ float get_energy( float *layer, int layer_size, int k, int pos, float energy ) {
     /* 5. Do not add if its absolute value is lower than the threshold */
     if ( energy_k >= THRESHOLD / layer_size || energy_k <= -THRESHOLD / layer_size )
         return energy_k;
-    return 0;
+    return 0.0f;
 }
 
 
@@ -190,12 +190,11 @@ int main(int argc, char *argv[]) {
     for( k=0; k<layer_size; k++ ) layer_copy[k] = 0.0f;
     
     /* 4. Storms simulation */
-    #pragma omp target data map(to: layer[:layer_size],layer_copy[:layer_size],storms[:num_storms])
     for( i=0; i<num_storms; i++) {
 
         /* 4.1. Add impacts energies to layer cells */
         /* For each particle */
-        #pragma omp target parallel for map(tofrom: layer[:layer_size]) map(to: storms[:num_storms]) reduction(+:layer[:layer_size])
+        #pragma omp target parallel for map(tofrom: layer[:layer_size]) reduction(+:layer[:layer_size])
         for( j=0; j<storms[i].size; j++ ) {
             /* Get impact energy (expressed in thousandths) */
             float energy = (float)storms[i].posval[j*2+1] * 1000;
@@ -205,19 +204,17 @@ int main(int argc, char *argv[]) {
             /* For each cell in the layer */
             for( k=0; k<layer_size; k++ ) {
                 /* Update the energy value for the cell */
-                layer[k] = layer[k] + get_energy( layer, layer_size, k, position, energy );
+                layer[k] = layer[k] + get_energy( layer_size, k, position, energy );
             }
         }
 
         /* 4.2. Energy relaxation between storms */
         /* 4.2.1. Copy values to the ancillary array */
-        #pragma omp target parallel for map(to: layer[:layer_size]) map(tofrom: layer_copy[:layer_size])
         for( k=0; k<layer_size; k++ ) 
             layer_copy[k] = layer[k];
 
         /* 4.2.2. Update layer using the ancillary values.
                   Skip updating the first and last positions */
-        #pragma omp target parallel for map(to: layer_copy[:layer_size]) map(tofrom: layer[:layer_size])
         for( k=1; k<layer_size-1; k++ )
             layer[k] = ( layer_copy[k-1] + layer_copy[k] + layer_copy[k+1] ) / 3;
 

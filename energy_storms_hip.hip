@@ -85,8 +85,8 @@ __global__ void updateKernel( int *deviceStorm, int storm_size, float *deviceLay
 
     int local_id = threadIdx.x;
 
-    int particle_index = global_id / storm_size;
-    int layer_index = global_id % storm_size;
+    int particle_index = global_id / layer_size;
+    int layer_index = global_id % layer_size;
 
     float energy = (float)deviceStorm[particle_index*2+1] * 1000;
     int position = deviceStorm[particle_index*2];
@@ -111,10 +111,9 @@ __global__ void updateKernel( int *deviceStorm, int storm_size, float *deviceLay
 
     layer_updates[2*local_id] = (float)layer_index;
     /* 5. Do not add if its absolute value is lower than the threshold */
-    if ( energy_k >= THRESHOLD / layer_size || energy_k <= -THRESHOLD / layer_size )
+    if ( energy_k >= THRESHOLD / layer_size || energy_k <= -THRESHOLD / layer_size ) {
         layer_updates[2*local_id+1] = energy_k;
-        printf("%d %f", 2*local_id+1, energy_k);
-    else {
+    } else {
         layer_updates[2*local_id+1] = 0.0f;
     }
     __syncthreads();

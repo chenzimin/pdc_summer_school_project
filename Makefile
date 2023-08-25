@@ -68,7 +68,7 @@ energy_storms_cuda: energy_storms_cuda.cu
 	$(CUDACC) $(DEBUG) $< $(LIBS) -o $@
 
 energy_storms_hip: energy_storms_hip.hip
-	$(HIPCC) $(DEBUG) $< $(LIBS) -o $@
+	$(HIPCC) $(DEBUG) $< $(LIBS) --offload-arch=gfx90a -o $@
 
 # Remove the target files
 clean:

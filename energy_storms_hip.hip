@@ -113,6 +113,7 @@ __global__ void updateKernel( int *deviceStorm, int storm_size, float *deviceLay
     /* 5. Do not add if its absolute value is lower than the threshold */
     if ( energy_k >= THRESHOLD / layer_size || energy_k <= -THRESHOLD / layer_size )
         layer_updates[2*local_id+1] = energy_k;
+        printf("%d %f", 2*local_id+1, energy_k);
     else {
         layer_updates[2*local_id+1] = 0.0f;
     }

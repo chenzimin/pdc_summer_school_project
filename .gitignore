@@ -3,3 +3,5 @@ energy_storms_mpi
 energy_storms_omp
 energy_storms_seq
 .vscode/settings.json
+core
+

@@ -92,7 +92,7 @@ __global__ void updateKernel( int *deviceStorm, int storm_size, float *deviceLay
     int position = deviceStorm[particle_index*2];
 
     __shared__ float energy_updates[TPB];
-    __shared__ int layer_indices[TPB]
+    __shared__ int layer_indices[TPB];
 
     /* 1. Compute the absolute value of the distance between the
         impact position and the k-th position of the layer */

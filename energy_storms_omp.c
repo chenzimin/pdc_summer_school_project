@@ -190,12 +190,11 @@ int main(int argc, char *argv[]) {
     for( k=0; k<layer_size; k++ ) layer_copy[k] = 0.0f;
     
     /* 4. Storms simulation */
-    #pragma omp target data map(to: layer[:layer_size],layer_copy[:layer_size],storms[:num_storms])
     for( i=0; i<num_storms; i++) {
 
         /* 4.1. Add impacts energies to layer cells */
         /* For each particle */
-        #pragma omp target parallel for map(tofrom: layer[:layer_size]) reduction(+:layer[:layer_size]) collapse(2)
+        #pragma omp target teams distribute parallel for map(tofrom: layer[:layer_size]) reduction(+:layer[:layer_size]) collapse(2)
         for( j=0; j<storms[i].size; j++ ) {
             for( k=0; k<layer_size; k++ ) {
                 /* Update the energy value for the cell */
@@ -205,13 +204,11 @@ int main(int argc, char *argv[]) {
 
         /* 4.2. Energy relaxation between storms */
         /* 4.2.1. Copy values to the ancillary array */
-        #pragma omp parallel for
         for( k=0; k<layer_size; k++ ) 
             layer_copy[k] = layer[k];
 
         /* 4.2.2. Update layer using the ancillary values.
                   Skip updating the first and last positions */
-        #pragma omp target parallel for map(from: layer[:layer_size])
         for( k=1; k<layer_size-1; k++ )
             layer[k] = ( layer_copy[k-1] + layer_copy[k] + layer_copy[k+1] ) / 3;
 

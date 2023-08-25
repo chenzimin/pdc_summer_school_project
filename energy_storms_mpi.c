@@ -244,6 +244,7 @@ int main(int argc, char *argv[]) {
             }
         }else{
             MPI_Reduce(layer, NULL, layer_size, MPI_FLOAT, MPI_SUM, 0, MPI_COMM_WORLD);
+            for( k=0; k<layer_size; k++ ) layer[k] = 0.0f;
         }
     }
 

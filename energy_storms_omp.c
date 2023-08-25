@@ -190,12 +190,11 @@ int main(int argc, char *argv[]) {
     for( k=0; k<layer_size; k++ ) layer_copy[k] = 0.0f;
     
     /* 4. Storms simulation */
-    #pragma omp target data map(to: layer[:layer_size])
     for( i=0; i<num_storms; i++) {
 
         /* 4.1. Add impacts energies to layer cells */
         /* For each particle */
-        #pragma omp target teams distribute parallel for map(tofrom: layer[:layer_size]) reduction(+:layer[:layer_size]) collapse(2)
+        #pragma omp target parallel for map(tofrom: layer[:layer_size]) reduction(+:layer[:layer_size]) collapse(2)
         for( j=0; j<storms[i].size; j++ ) {
             for( k=0; k<layer_size; k++ ) {
                 /* Update the energy value for the cell */

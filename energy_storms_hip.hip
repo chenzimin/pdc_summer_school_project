@@ -76,7 +76,7 @@ typedef struct {
 
 /* THIS FUNCTION CAN BE MODIFIED */
 /* Function to update a single position of the layer */
-__global__ void updateKernel( int *deviceStorm, int storm_size, float *deviceLayer, float *deviceLayerCopy, int layer_size) {
+__global__ void updateKernel( int *deviceStorm, int storm_size, float *deviceLayer, int layer_size) {
     int global_id = blockDim.x * blockIdx.x + threadIdx.x;
 
     if(global_id >= storm_size*layer_size) {
@@ -122,10 +122,7 @@ __global__ void updateKernel( int *deviceStorm, int storm_size, float *deviceLay
     if (local_id == 0) {
         int i;
         for( i=0 ; i<TPB ; i++) {
-            deviceLayerCopy[layer_indices[i]] = energy_updates[i] + deviceLayerCopy[layer_indices[i]];
-        }
-        for( i=0 ; i<layer_size ; i++) {
-            atomicAdd(&deviceLayer[i], deviceLayerCopy[i]);
+            atomicAdd(&deviceLayer[layer_indices[i]], energy_updates[i]);
         }
     }
 }
@@ -252,10 +249,6 @@ int main(int argc, char *argv[]) {
     HIP_ASSERT(hipMalloc((void**)&deviceLayer, layer_size*sizeof(float)));
     HIP_ASSERT(hipMemcpy(deviceLayer, layer, layer_size*sizeof(float), hipMemcpyHostToDevice));
 
-    float *deviceLayerCopy;
-    HIP_ASSERT(hipMalloc((void**)&deviceLayerCopy, layer_size*sizeof(float)));
-    HIP_ASSERT(hipMemcpy(deviceLayerCopy, layer, layer_size*sizeof(float), hipMemcpyHostToDevice));
-
     int *deviceStorm = NULL;
     
     /* 4. Storms simulation */
@@ -266,11 +259,7 @@ int main(int argc, char *argv[]) {
 
         dim3 threads(TPB,1,1);
         dim3 blocks((storms[i].size*layer_size+TPB-1)/TPB,1,1);
-        hipLaunchKernelGGL(updateKernel, blocks, threads, 0, 0, deviceStorm, storms[i].size, deviceLayer, deviceLayerCopy, layer_size);
-
-        for ( k=0 ; k<layer_size; k++) {
-            deviceLayerCopy[k] = 0.0f;
-        }
+        hipLaunchKernelGGL(updateKernel, blocks, threads, 0, 0, deviceStorm, storms[i].size, deviceLayer, layer_size);
 
         HIP_ASSERT(hipMemcpy(layer, deviceLayer, layer_size*sizeof(float), hipMemcpyDeviceToHost));
 

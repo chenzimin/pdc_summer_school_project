@@ -253,7 +253,7 @@ int main(int argc, char *argv[]) {
     /* 4. Storms simulation */
     for( i=0; i<num_storms; i++) {
 
-        HIP_ASSERT(hipMalloc((void**)deviceStorm, 2*storms[i].size*sizeof(int)));
+        HIP_ASSERT(hipMalloc((void**)&deviceStorm, 2*storms[i].size*sizeof(int)));
         HIP_ASSERT(hipMemcpy(deviceStorm, storms[i].posval, 2*storms[i].size*sizeof(int), hipMemcpyHostToDevice));
 
         dim3 threads(TPB,1,1);

@@ -253,7 +253,7 @@ int main(int argc, char *argv[]) {
     HIP_ASSERT(hipMalloc((void**)&deviceLayer, layer_size*sizeof(float)));
     HIP_ASSERT(hipMemcpy(deviceLayer, layer, layer_size*sizeof(float), hipMemcpyHostToDevice));
 
-    float *deviceStorm = NULL;
+    int *deviceStorm = NULL;
     
     /* 4. Storms simulation */
     for( i=0; i<num_storms; i++) {

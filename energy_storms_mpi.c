@@ -195,43 +195,51 @@ int main(int argc, char *argv[]) {
     for( k=0; k<layer_size; k++ ) layer[k] = 0.0f;
     for( k=0; k<layer_size; k++ ) layer_copy[k] = 0.0f;
     
+    int particle_per_process;
+
     /* 4. Storms simulation */
     for( i=0; i<num_storms; i++) {
 
-        /* 4.1. Add impacts energies to layer cells */
-        /* For each particle */
-        for( j=0; j<storms[i].size; j++ ) {
-            /* Get impact energy (expressed in thousandths) */
-            float energy = (float)storms[i].posval[j*2+1] * 1000;
-            /* Get impact position */
-            int position = storms[i].posval[j*2];
+        /* TODO Let rank 0 skip this and only does the last three loops */
+        particle_per_process = (storms[i].size + size - 1 - 1) / (size - 1);
+        if(rank != 0) {
+            for( j=particle_per_process*(rank-1); j<min(particle_per_process*(rank), storms[i].size); j++ ) {
+                /* Get impact energy (expressed in thousandths) */
+                float energy = (float)storms[i].posval[j*2+1] * 1000;
+                /* Get impact position */
+                int position = storms[i].posval[j*2];
 
-            /* For each cell in the layer */
-            for( k=0; k<layer_size; k++ ) {
-                /* Update the energy value for the cell */
-                update( layer, layer_size, k, position, energy );
-            }
-        }
-
-        /* 4.2. Energy relaxation between storms */
-        /* 4.2.1. Copy values to the ancillary array */
-        for( k=0; k<layer_size; k++ ) 
-            layer_copy[k] = layer[k];
-
-        /* 4.2.2. Update layer using the ancillary values.
-                  Skip updating the first and last positions */
-        for( k=1; k<layer_size-1; k++ )
-            layer[k] = ( layer_copy[k-1] + layer_copy[k] + layer_copy[k+1] ) / 3;
-
-        /* 4.3. Locate the maximum value in the layer, and its position */
-        for( k=1; k<layer_size-1; k++ ) {
-            /* Check it only if it is a local maximum */
-            if ( layer[k] > layer[k-1] && layer[k] > layer[k+1] ) {
-                if ( layer[k] > maximum[i] ) {
-                    maximum[i] = layer[k];
-                    positions[i] = k;
+                /* For each cell in the layer */
+                for( k=0; k<layer_size; k++ ) {
+                    /* Update the energy value for the cell */
+                    update( layer, layer_size, k, position, energy );
                 }
             }
+        }
+        if(rank == 0){
+            MPI_Reduce(MPI_IN_PLACE, layer, layer_size, MPI_FLOAT, MPI_SUM, 0, MPI_COMM_WORLD);
+            /* 4.2. Energy relaxation between storms */
+            /* 4.2.1. Copy values to the ancillary array */
+            for( k=0; k<layer_size; k++ ) 
+                layer_copy[k] = layer[k];
+
+            /* 4.2.2. Update layer using the ancillary values.
+                    Skip updating the first and last positions */
+            for( k=1; k<layer_size-1; k++ )
+                layer[k] = ( layer_copy[k-1] + layer_copy[k] + layer_copy[k+1] ) / 3;
+
+            /* 4.3. Locate the maximum value in the layer, and its position */
+            for( k=1; k<layer_size-1; k++ ) {
+                /* Check it only if it is a local maximum */
+                if ( layer[k] > layer[k-1] && layer[k] > layer[k+1] ) {
+                    if ( layer[k] > maximum[i] ) {
+                        maximum[i] = layer[k];
+                        positions[i] = k;
+                    }
+                }
+            }
+        }else{
+            MPI_Reduce(layer, NULL, layer_size, MPI_FLOAT, MPI_SUM, 0, MPI_COMM_WORLD);
         }
     }
 
@@ -263,6 +271,8 @@ int main(int argc, char *argv[]) {
     /* 8. Free resources */    
     for( i=0; i<argc-2; i++ )
         free( storms[i].posval );
+
+    MPI_Finalize();
 
     /* 9. Program ended successfully */
     return 0;

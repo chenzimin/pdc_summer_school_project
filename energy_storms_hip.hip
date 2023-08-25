@@ -259,6 +259,7 @@ int main(int argc, char *argv[]) {
         dim3 threads(TPB,1,1);
         dim3 blocks((storms[i].size*layer_size+TPB-1)/TPB,1,1);
         hipLaunchKernelGGL(updateKernel, blocks, threads, 0, 0, deviceStorm, storms[i].size, deviceLayer, layer_size);
+        hipDeviceSynchronize();
 
         HIP_ASSERT(hipMemcpy(layer, deviceLayer, layer_size*sizeof(float), hipMemcpyDeviceToHost));
 

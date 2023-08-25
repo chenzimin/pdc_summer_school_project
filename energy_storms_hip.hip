@@ -26,6 +26,14 @@
 /* Headers for the HIP assignment versions */
 #include<hip/hip_runtime.h>
 
+#ifdef NDEBUG
+#define HIP_ASSERT(x) x
+#else
+#define HIP_ASSERT(x) (assert((x)==hipSuccess))
+#endif
+
+#define TPB 128
+
 /*
  * Macros to show errors when calling a HIP library function,
  * or after launching a kernel
@@ -68,10 +76,26 @@ typedef struct {
 
 /* THIS FUNCTION CAN BE MODIFIED */
 /* Function to update a single position of the layer */
-void update( float *layer, int layer_size, int k, int pos, float energy ) {
+__kernel__ void update( int *deviceStorm, int storm_size, float *deviceLayer, int layer_size) {
+    int global_id = blockDimX * blockIdx.x + threadIdx.x;
+
+    if(t_id >= storm_size*layer_size) {
+        return;
+    }
+
+    int local_id = threadIdx.x;
+
+    int particle_index = global_id / storm_size;
+    int layer_index = global_id % storm_size;
+
+    float energy = (float)deviceStorm.posval[particle_index*2+1] * 1000;
+    int position = deviceStorm.posval[particle_index*2];
+
+    __shared__ float layer_updates[2*TPB];
+
     /* 1. Compute the absolute value of the distance between the
         impact position and the k-th position of the layer */
-    int distance = pos - k;
+    int distance = position - k;
     if ( distance < 0 ) distance = - distance;
 
     /* 2. Impact cell has a distance value of 1 */
@@ -79,15 +103,31 @@ void update( float *layer, int layer_size, int k, int pos, float energy ) {
 
     /* 3. Square root of the distance */
     /* NOTE: Real world atenuation typically depends on the square of the distance.
-       We use here a tailored equation that affects a much wider range of cells */
+    We use here a tailored equation that affects a much wider range of cells */
     float atenuacion = sqrtf( (float)distance );
 
     /* 4. Compute attenuated energy */
     float energy_k = energy / layer_size / atenuacion;
 
+    layer_updates[2*local_id] = (float)layer_index;
     /* 5. Do not add if its absolute value is lower than the threshold */
     if ( energy_k >= THRESHOLD / layer_size || energy_k <= -THRESHOLD / layer_size )
-        layer[k] = layer[k] + energy_k;
+        layer_updates[2*local_id+1] = energy_k;
+    else {
+        layer_updates[2*local_id+1] = 0.0f;
+    }
+    __syncthreads();
+
+    if (local_id == 0) {
+        float tmp_layer[ num_storms ] = {0.0f};
+        int i;
+        for( i=0 ; i<TPB ; i++) {
+            tmp_layer[layer_updates[2*i]] = tmp_layer[layer_updates[2*i]] + layer_updates[2*i+1];
+        }
+        for( i=0 ; i<layer_size ; i++) {
+            atomicAdd(&deviceLayer[i], tmp_layer[i]);
+        }
+    }
 }
 
 
@@ -207,24 +247,26 @@ int main(int argc, char *argv[]) {
     }
     for( k=0; k<layer_size; k++ ) layer[k] = 0.0f;
     for( k=0; k<layer_size; k++ ) layer_copy[k] = 0.0f;
+
+    float *deviceLayer;
+    HIP_ASSERT(hipMalloc((void**)&deviceLayer, layer_size*sizeof(float)));
+    HIP_ASSERT(hipMemcpy(deviceLayer, layer, layer_size*sizeof(float), hipMemcpyHostToDevice));
+
+    float *deviceStorm = NULL;
     
     /* 4. Storms simulation */
     for( i=0; i<num_storms; i++) {
 
-        /* 4.1. Add impacts energies to layer cells */
-        /* For each particle */
-        for( j=0; j<storms[i].size; j++ ) {
-            /* Get impact energy (expressed in thousandths) */
-            float energy = (float)storms[i].posval[j*2+1] * 1000;
-            /* Get impact position */
-            int position = storms[i].posval[j*2];
-
-            /* For each cell in the layer */
-            for( k=0; k<layer_size; k++ ) {
-                /* Update the energy value for the cell */
-                update( layer, layer_size, k, position, energy );
-            }
+        if (deviceStorm != NULL) {
+            HIP_ASSERT(hipFree(deviceStorm));
         }
+        HIP_ASSERT(hipMalloc((void**)&deviceStorm, 2*storms[i].size*sizeof(int)));
+
+        dim3 threads(TPB,1,1);
+        dim3 blocks((storm_size*layer_size+TPB-1)/TPB,1,1)
+        hipLaunchKernelGGL(update, blocks, threads, 0, 0, deviceStorm, storms[i].size, deviceLayer, layer_size);
+
+        HIP_ASSERT(hipMemcpy(layer, deviceLayer, layer_size*sizeof(float), hipMemcpyDeviceToHost));
 
         /* 4.2. Energy relaxation between storms */
         /* 4.2.1. Copy values to the ancillary array */

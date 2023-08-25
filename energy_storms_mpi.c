@@ -20,7 +20,6 @@
 #include<stdlib.h>
 #include<math.h>
 #include<sys/time.h>
-#include<string.h>
 
 /* Headers for the MPI assignment versions */
 #include<mpi.h>
@@ -197,8 +196,8 @@ int main(int argc, char *argv[]) {
         fprintf(stderr,"Error: Allocating the layer memory\n");
         exit( EXIT_FAILURE );
     }
-    memset(layer, 0, layer_size);
-    memset(layer_copy, 0, layer_size);
+    for( k=0; k<layer_size; k++ ) layer[k] = 0.0f;
+    for( k=0; k<layer_size; k++ ) layer_copy[k] = 0.0f;
     
     int particle_per_process;
 
@@ -245,7 +244,7 @@ int main(int argc, char *argv[]) {
             }
         }else{
             MPI_Reduce(layer, NULL, layer_size, MPI_FLOAT, MPI_SUM, 0, MPI_COMM_WORLD);
-            memset(layer, 0, layer_size);
+            for( k=0; k<layer_size; k++ ) layer[k] = 0.0f;
         }
     }
 

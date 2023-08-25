@@ -119,11 +119,6 @@ __global__ void updateKernel( int *deviceStorm, int storm_size, float *deviceLay
     }
     __syncthreads();
 
-    int i;
-    for( i=0 ; i<TPB ; i++) {
-        printf("%f\n", energy_updates[i] );
-    }
-
     if (local_id == 0) {
         int i;
         for( i=0 ; i<TPB ; i++) {

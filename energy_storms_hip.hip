@@ -76,7 +76,7 @@ typedef struct {
 
 /* THIS FUNCTION CAN BE MODIFIED */
 /* Function to update a single position of the layer */
-__global__ void update( int *deviceStorm, int storm_size, float *deviceLayer, int layer_size) {
+__global__ void updateKernel( int *deviceStorm, int storm_size, float *deviceLayer, int layer_size) {
     int global_id = blockDim.x * blockIdx.x + threadIdx.x;
 
     if(global_id >= storm_size*layer_size) {
@@ -266,7 +266,7 @@ int main(int argc, char *argv[]) {
 
         dim3 threads(TPB,1,1);
         dim3 blocks((storms[i].size*layer_size+TPB-1)/TPB,1,1);
-        hipLaunchKernelGGL(update, blocks, threads, 0, 0, deviceStorm, storms[i].size, deviceLayer, layer_size);
+        hipLaunchKernelGGL(updateKernel, blocks, threads, 0, 0, deviceStorm, storms[i].size, deviceLayer, layer_size);
 
         HIP_ASSERT(hipMemcpy(layer, deviceLayer, layer_size*sizeof(float), hipMemcpyDeviceToHost));
 

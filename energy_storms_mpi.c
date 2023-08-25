@@ -20,6 +20,7 @@
 #include<stdlib.h>
 #include<math.h>
 #include<sys/time.h>
+#include<string.h>
 
 /* Headers for the MPI assignment versions */
 #include<mpi.h>

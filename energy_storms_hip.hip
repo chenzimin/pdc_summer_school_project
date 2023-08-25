@@ -119,14 +119,8 @@ __global__ void updateKernel( int *deviceStorm, int storm_size, float *deviceLay
     __syncthreads();
 
     if (local_id == 0) {
-        float tmp_layer[ layer_size ];
-        int i;
-        for( i=0; i<layer_size; i++ ) tmp_layer[i] = 0.0f;
         for( i=0 ; i<TPB ; i++) {
-            tmp_layer[(int)layer_updates[2*i]] = tmp_layer[(int)layer_updates[2*i]] + layer_updates[2*i+1];
-        }
-        for( i=0 ; i<layer_size ; i++) {
-            atomicAdd(&deviceLayer[i], tmp_layer[i]);
+            atomicAdd(&deviceLayer[(int)layer_updates[2*i]], layer_updates[2*i+1]);
         }
     }
 }

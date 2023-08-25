@@ -76,7 +76,7 @@ typedef struct {
 
 /* THIS FUNCTION CAN BE MODIFIED */
 /* Function to update a single position of the layer */
-__device__ void update( int *deviceStorm, int storm_size, float *deviceLayer, int layer_size) {
+__global__ void update( int *deviceStorm, int storm_size, float *deviceLayer, int layer_size) {
     int global_id = blockDim.x * blockIdx.x + threadIdx.x;
 
     if(global_id >= storm_size*layer_size) {
@@ -119,8 +119,9 @@ __device__ void update( int *deviceStorm, int storm_size, float *deviceLayer, in
     __syncthreads();
 
     if (local_id == 0) {
-        float tmp_layer[ layer_size ] = {0.0f};
+        float tmp_layer[ layer_size ];
         int i;
+        for( i=0; i<layer_size; i++ ) tmp_layer[i] = 0.0f;
         for( i=0 ; i<TPB ; i++) {
             tmp_layer[(int)layer_updates[2*i]] = tmp_layer[(int)layer_updates[2*i]] + layer_updates[2*i+1];
         }

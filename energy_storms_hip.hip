@@ -76,10 +76,10 @@ typedef struct {
 
 /* THIS FUNCTION CAN BE MODIFIED */
 /* Function to update a single position of the layer */
-__kernel__ void update( int *deviceStorm, int storm_size, float *deviceLayer, int layer_size) {
+__device__ void update( int *deviceStorm, int storm_size, float *deviceLayer, int layer_size) {
     int global_id = blockDimX * blockIdx.x + threadIdx.x;
 
-    if(t_id >= storm_size*layer_size) {
+    if(global_id >= storm_size*layer_size) {
         return;
     }
 
@@ -88,14 +88,14 @@ __kernel__ void update( int *deviceStorm, int storm_size, float *deviceLayer, in
     int particle_index = global_id / storm_size;
     int layer_index = global_id % storm_size;
 
-    float energy = (float)deviceStorm.posval[particle_index*2+1] * 1000;
-    int position = deviceStorm.posval[particle_index*2];
+    float energy = (float)deviceStorm[particle_index*2+1] * 1000;
+    int position = deviceStorm[particle_index*2];
 
     __shared__ float layer_updates[2*TPB];
 
     /* 1. Compute the absolute value of the distance between the
         impact position and the k-th position of the layer */
-    int distance = position - k;
+    int distance = position - layer_index;
     if ( distance < 0 ) distance = - distance;
 
     /* 2. Impact cell has a distance value of 1 */
@@ -119,7 +119,7 @@ __kernel__ void update( int *deviceStorm, int storm_size, float *deviceLayer, in
     __syncthreads();
 
     if (local_id == 0) {
-        float tmp_layer[ num_storms ] = {0.0f};
+        float tmp_layer[ layer_size ] = {0.0f};
         int i;
         for( i=0 ; i<TPB ; i++) {
             tmp_layer[layer_updates[2*i]] = tmp_layer[layer_updates[2*i]] + layer_updates[2*i+1];
@@ -261,9 +261,10 @@ int main(int argc, char *argv[]) {
             HIP_ASSERT(hipFree(deviceStorm));
         }
         HIP_ASSERT(hipMalloc((void**)&deviceStorm, 2*storms[i].size*sizeof(int)));
+        HIP_ASSERT(hipMemcpy(deviceStorm, storms[i].posval, 2*storms[i].size*sizeof(int), hipMemcpyHostToDevice));
 
         dim3 threads(TPB,1,1);
-        dim3 blocks((storm_size*layer_size+TPB-1)/TPB,1,1)
+        dim3 blocks((storms[i].size*layer_size+TPB-1)/TPB,1,1);
         hipLaunchKernelGGL(update, blocks, threads, 0, 0, deviceStorm, storms[i].size, deviceLayer, layer_size);
 
         HIP_ASSERT(hipMemcpy(layer, deviceLayer, layer_size*sizeof(float), hipMemcpyDeviceToHost));

@@ -253,10 +253,7 @@ int main(int argc, char *argv[]) {
     /* 4. Storms simulation */
     for( i=0; i<num_storms; i++) {
 
-        if (deviceStorm != NULL) {
-            HIP_ASSERT(hipFree(deviceStorm));
-        }
-        HIP_ASSERT(hipMalloc((void**)&deviceStorm, 2*storms[i].size*sizeof(int)));
+        HIP_ASSERT(hipMalloc((void**)deviceStorm, 2*storms[i].size*sizeof(int)));
         HIP_ASSERT(hipMemcpy(deviceStorm, storms[i].posval, 2*storms[i].size*sizeof(int), hipMemcpyHostToDevice));
 
         dim3 threads(TPB,1,1);
@@ -264,6 +261,8 @@ int main(int argc, char *argv[]) {
         hipLaunchKernelGGL(updateKernel, blocks, threads, 0, 0, deviceStorm, storms[i].size, deviceLayer, layer_size);
 
         HIP_ASSERT(hipMemcpy(layer, deviceLayer, layer_size*sizeof(float), hipMemcpyDeviceToHost));
+
+        HIP_ASSERT(hipFree(deviceStorm));
 
         /* 4.2. Energy relaxation between storms */
         /* 4.2.1. Copy values to the ancillary array */

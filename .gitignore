@@ -4,3 +4,5 @@ energy_storms_omp
 energy_storms_seq
 .vscode/settings.json
 core
+*.png
+.ipynb_checkpoints

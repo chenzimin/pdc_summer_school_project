@@ -122,7 +122,9 @@ __global__ void updateKernel( int *deviceStorm, int storm_size, float *deviceLay
     if (local_id == 0) {
         int i;
         for( i=0 ; i<TPB ; i++) {
-            atomicAdd(&deviceLayer[layer_indices[i]], energy_updates[i]);
+            if(energy_updates[i] != 0.0f) {
+                atomicAdd(&deviceLayer[layer_indices[i]], energy_updates[i]);
+            }
         }
     }
 }

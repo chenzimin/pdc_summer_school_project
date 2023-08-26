@@ -1,27 +1,36 @@
+# PDC 2023 summer school project
+The task of the project is to parallelize the code in `energy_storms.c` with OpenMP, HIP and MPI. This work is done by Zimin, x and y.
 
-Comment for PDC Summer School - Check out the Project_PDC_Summer_School.pdf where more detailed instruction for the final project is located
+## How to compile
 
-Simplified simulation of high-energy particle storms
+Compling all files through the `Makefile`:
 
-EduHPC 2018: Peachy assignment
+```bash
+make clean
+make all
+```
 
-(c) 2018 Arturo Gonzalez-Escribano, Eduardo Rodriguez-Gutiez
-Group Trasgo, Universidad de Valladolid (Spain)
+This will generate `energy_storm_seq`, `energy_storm_omp`, `energy_storm_hip` and `energy_storm_mpi`.
 
---------------------------------------------------------------
+## How to run
 
-Read the handout and use the sequential code as reference to study.
-Use the other source files to parallelize with the proper programming model.
+When running on Dardel, we need to first allocate the resource and then run the program. For example, for MPI, we can first allocate the node by:
 
-Edit the first lines in the Makefile to set your preferred compilers and flags
-for both the sequential code and for each parallel programming model: 
-OpenMP, MPI, and CUDA.
+```bash
+./mpi_salloc.sh
+```
 
-To see a description of the Makefile options execute:
-$ make help 
+Then, to run the MPI version:
 
-Use the input files in the test_files directory for your first tests.
-Students are encouraged to manually write or automatically generate
-their own input files for more complete tests. See a description of
-the input files format in the handout.
+```bash
+srun -n 32 ./energy_storms_mpi 30000 test_files/test_02_a30k_p20k_w1
+```
 
+Check `omp_salloc.sh`, `hip_salloc.sh` and `mpi_salloc.sh` to see how to allocate the node for OpenMP, HIP and MPI. Example of usage can be found in `omp_time.sh`, `hip_time.sh` and `mpi_time.sh`.
+
+## Repository structure
+
+Apart from the files that are mentioned in above. We also have:
+
+* `result` repository that contain the files generated from `omp_time.sh`, `hip_time.sh` and `mpi_time.sh`. They contain the running time of OpenMP, HIP and MPI on different layer size and number of particles.
+* `notebook/graphs.ipynb` is the jupyter notebook that generates the plot showing how all program versions' running time scales with the layer size and number of particles.

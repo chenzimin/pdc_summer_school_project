@@ -6,3 +6,4 @@ energy_storms_seq
 core
 *.png
 .ipynb_checkpoints
+.DS_Store

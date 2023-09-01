@@ -14,7 +14,7 @@ This will generate `energy_storm_seq`, `energy_storm_omp`, `energy_storm_hip` an
 
 ## How to run
 
-When running on Dardel, we can first the `env.sh` to setup the enviroment. Then, we need to allocate the resource and then run the program. For example, for MPI, we can first allocate the node by:
+When running on Dardel, we can first use the `env.sh` script to setup the enviroment. Then, we need to allocate the resource and then run the program. For example, for MPI, we can first allocate the node by:
 
 ```bash
 ./mpi_salloc.sh

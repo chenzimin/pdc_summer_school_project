@@ -1,5 +1,5 @@
 # PDC 2023 summer school project
-The task of the project is to parallelize the code in `energy_storms.c` with OpenMP, HIP and MPI. This work is done by Zimin, x and y.
+The task of the project is to parallelize the code in `energy_storms.c` with OpenMP, HIP and MPI. This work is done by Zimin, Ziyi and Qian.
 
 ## How to compile
 

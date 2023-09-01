@@ -34,3 +34,4 @@ Apart from the files that are mentioned in above. We also have:
 
 * `result` repository that contain the files generated from `omp_time.sh`, `hip_time.sh` and `mpi_time.sh`. They contain the running time of OpenMP, HIP and MPI on different layer size and number of particles.
 * `notebook/graphs.ipynb` is the jupyter notebook that generates the plot showing how all program versions' running time scales with the layer size and number of particles.
+* `energy_storms_mpi_new.c` and `energy_storms_omp_new.c` are our alternative solutions for MPI and OpenMP.

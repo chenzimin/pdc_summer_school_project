@@ -3,6 +3,8 @@ The task of the project is to parallelize the code in `energy_storms.c` with Ope
 
 ## How to compile
 
+The parallelized version are `energy_storms_hip.hip`, `energy_storms_mpi.c`, and `energy_storms_omp.c`.
+
 Compling all files through the `Makefile`:
 
 ```bash
